@@ -1,0 +1,8 @@
+{
+  "mappings": {
+    "image-classification-app": "img-classification",
+    "image-segmentation-app": "unet"
+  },
+  "models": [
+  ]
+}

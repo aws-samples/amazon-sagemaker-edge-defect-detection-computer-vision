@@ -1,0 +1,39 @@
+<!-- Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: MIT-0 -->
+{% extends 'base.html' %} {% block header %}
+<meta http-equiv="refresh" content="5" />
+{% endblock %} {% block content %}
+<div class="mx-5 my-5">
+  <div class="card my-5">
+    <div class="card-header">Edge Agent</div>
+    <div class="card-body">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Model Name</th>
+            <th scope="col">Model Version</th>
+            <th scope="col">Model Identifier</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in loaded_models %}
+          <tr>
+            <td>{{ m.name }}</td>
+            <td>{{ m.version }}</td>
+            <td>{{ m.identifier }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="my-3 alert alert-danger d-flex align-items-center" role="alert">
+    <div>
+            <b>Error:</b> No images to run inference on. Please download some test images into the <tt>./static/</tt> folder.
+    </div>
+  </div>
+
+
+</div>
+{% endblock %}

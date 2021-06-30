@@ -1,0 +1,84 @@
+<!-- Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+SPDX-License-Identifier: MIT-0 -->
+{% extends 'base.html' %} {% block header %}
+<meta http-equiv="refresh" content="5" />
+{% endblock %} {% block content %}
+<div class="mx-5 my-5">
+  <div class="card my-5">
+    <div class="card-header">Edge Agent</div>
+    <div class="card-body">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Model Name</th>
+            <th scope="col">Model Version</th>
+            <th scope="col">Model Identifier</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in loaded_models %}
+          <tr>
+            <td>{{ m.name }}</td>
+            <td>{{ m.version }}</td>
+            <td>{{ m.identifier }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card my-3">
+    <div class="card-header">Camera Stream</div>
+    <div class="card-body">
+      <div>Filename: {{ image_file }}</div>
+      <div class="my-3">
+        <img
+          src="{{url_for('static', filename=image_file)}}"
+          class="img-fluid"
+          height="300"
+          width="300"
+          alt="..."
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="card my-3">
+    <div class="card-header">Model Predictions</div>
+    <div class="card-body">
+        <div>
+          <b>Image Classification</b>
+        </div>
+        {% if (y_clf_class == 'normal') %}
+        <div class="my-3 alert alert-success d-flex align-items-center" role="alert">
+          <div>
+            <div class="fw-bold">Normal</div>
+            <div class="fw-light">Confidence: normal={{ y_clf_normal }} / anomalous={{ y_clf_anomalous }}</div> 
+          </div>
+        </div>
+        {% elif (y_clf_class == 'anomalous') %}
+        <div class="my-3 alert alert-danger d-flex align-items-center" role="alert">
+          <div>
+            <div class="fw-bold">Anomalous</div>
+            <div class="fw-light">Confidence: normal={{ y_clf_normal }} / anomalous={{ y_clf_anomalous }}</div> 
+          </div>
+        </div>
+        {% else %}
+          <p class="fw-light">No image classification result available</p>
+        {% endif %}
+    
+        <div>
+          <b>Image Segmentation</b><br/>
+            {% if y_segm_img %}
+              <img id="picture" src="data:image/png;base64,{{ y_segm_img }}">
+            {% else %}
+            <p class="fw-light">No segmentation mask available</p>
+            {% endif %}
+        </div>
+
+    </div>
+  </div>
+  
+</div>
+{% endblock %}
