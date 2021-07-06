@@ -49,7 +49,7 @@ def download_config(bucket_name):
 
     # Finally, create SM Edge Agent client stubs, using protobuffer compiler
     logger.info('Creating protobuf agent stubs...')
-    os.system('mkdir app/')
+    os.system('mkdir -p app/')
     os.system('python3 -m grpc_tools.protoc --proto_path=agent/docs/api --python_out=app/ --grpc_python_out=app/ agent/docs/api/agent.proto')
 
 if __name__ == '__main__':
