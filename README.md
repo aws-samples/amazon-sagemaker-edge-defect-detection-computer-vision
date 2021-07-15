@@ -4,11 +4,11 @@ In this workshop, we will walk you through a step by step process to build and t
 
 ## Architecture
 
-The architecture that will be built during this workshop is shown below. Several key components can be highlighted:
+The architecture we will build during this workshop is illustrated below. Several key components can be highlighted:
 
-1. **Model development and training on the cloud**: This repository contains code for two pipelines based on [SageMaker Pipelines](https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html) for each model type. Those pipelines are being built and executed in a SageMaker Studio notebook.
-2. **Model deployment to the edge**: Once a model building pipeline executed successfully, models will be compiled (with SageMaker Neo) and packaged with a SageMaker Edge Manager packaging job. As such, they can be deployed onto the edge device via IoT Jobs. On the edge device, there is an application running which will receive the job payload via MQTT and download the relevant model pacakge.
-3. **Edge inference**: The edge device which is running the application for defect detection. In this workshop, we will use an EC2 instance to simulate an edge device - but any hardware device (RaspberryPi, Nvidia Jetson) can be used as long as SageMaker Neo compilations supported for it. During setup, a configuration package is being downloaded to edge device to configure SageMaker Edge Agent. The Edge Agent on the device can then load models deployed via OTA updates and make them available for prediction via a low-latency gRPC API (see [SageMaker Edge Manager documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/edge.html)).
+1. **Model development and training on the cloud**: This repository contains code for two pipelines based on [SageMaker Pipelines](https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html) for each of the two model types used (classification and segmentation). These pipelines will be built and executed in a SageMaker Studio notebook.
+2. **Model deployment to the edge**: Once a model building pipeline executed successfully, models will be compiled with [SageMaker Neo](https://aws.amazon.com/sagemaker/neo/) and packaged with a [SageMaker Edge packaging job](https://docs.aws.amazon.com/sagemaker/latest/dg/edge-packaging-job.html). As such, they can be deployed onto the edge device via IoT Jobs. On the edge device an application is running which will receive the model deployment job payload via MQTT and download the relevant model package.
+3. **Edge inference**: The edge device is running the actual application for defect detection. In this workshop, we will use an EC2 instance to simulate an edge device - but any hardware device (RaspberryPi, Nvidia Jetson) can be used as long as SageMaker Neo compilations are supported. During setup, a configuration package is being downloaded to edge device to configure SageMaker Edge Agent. The Edge Agent on the device can then load models deployed via OTA updates and make them available for prediction via a low-latency gRPC API (see [SageMaker Edge Manager documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/edge.html)).
 
 ![architecture](img/architecture.png)
 
@@ -18,10 +18,10 @@ This workshop is designed to be used with any dataset for defect detection that 
 
 ## Models
 
-In this workshop, you will build two types of ML models:
+In this workshop, you will build two types of machine learning models:
 
-* an image classification model based on the AWS [built-in SageMaker Image Classification algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html)
-* a custom semantic segmentation model based built with Tensorflow/Keras using the [UNET deep learning architecture](https://arxiv.org/abs/1505.04597)
+* an image classification model using the [built-in SageMaker Image Classification algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html) based on the [MXNet framework](https://mxnet.apache.org/versions/1.8.0/)
+* a semantic segmentation model built with [Tensorflow/Keras](https://github.com/tensorflow/tensorflow) using the [UNET deep learning architecture](https://arxiv.org/abs/1505.04597)
 
 ## Directory structure of this repository
 
@@ -74,7 +74,7 @@ src/cloud
 
 ## Getting started
 
-Please follow the steps below to start building your own edge ML project. Please note that model training in the cloud and running inference on the edge are interdependent to another. We recommend you start by setting up the edge device first and then train the models as a second step. You can then directly deploy them to the edge after you have successfully trained the models.
+Please follow the steps below to start building your own edge ML project. Please note that model training in the cloud and running inference on the edge are interdependent of each other. We recommend you start by setting up the edge device first and then train the models as a second step. You can then directly deploy them to the edge after you have successfully trained the models.
 
 ### Setting up workshop resources by launching the CloudFormation stack
 
@@ -82,9 +82,9 @@ Please follow the steps below to start building your own edge ML project. Please
 2. Define a name for the stack and enter a *Project Name* parameter, that is unique in your account. The project name that you define during stack creation defines the name of many of the resources that are being created with the stack. Make sure to take note of this parameter.
 3. Have a look at the CloudFormation stack outputs and take note of the provided information.
 
-#### What is being created with the CloudFormation stack?
+#### What is being created by the CloudFormation stack?
 
-This stack configures several resources needed for this workshop. It sets up an IoT device together with certificates and roles, an Edge Manager fleet, registers the device with the fleet and creates a package for edge agent configuration. The following image illustrates the resources being created with the CloudFormation stack.
+This stack configures several resources needed for this workshop. It sets up an IoT device together with certificates and roles, an Edge Manager fleet, registers the device with the fleet and creates a package for edge agent configuration which is being saved in the S3 bucket for this project. The following image illustrates the resources being created with the CloudFormation stack.
 
 ![edge config](img/cloudformation.png)
 
@@ -99,7 +99,7 @@ This stack configures several resources needed for this workshop. It sets up an 
 
 5. Create an environment variable to define the location of the agent directory. If you haven't changed your current directory, this would likely be `export SM_EDGE_AGENT_HOME=$PWD/agent`.
 6. Start the edge agent by running `./start_edge_agent.sh`, which launches the edge agent on the unix socket `tmp/edge_agent`. You should now the able to interact with the edge agent from your application.
-7. Before running the actual application, you need to define an environment variable which determine whether you want to run the app with the Flask development server or the with a production-ready uWSGI server (using [waitress](https://github.com/Pylons/waitress)). For now, lets use the production server by setting `export SM_APP_ENV=prod`. For debugging, you might want to later change this to `dev`.
+7. Before running the actual application, you need to define an environment variable which determines whether you want to run the app with the Flask development server or the with a production-ready uWSGI server (using [waitress](https://github.com/Pylons/waitress)). For now, lets use the production server by setting `export SM_APP_ENV=prod`. For debugging, you might want to later change this to `dev`.
 8. Run the application with `python3 run.py` to initialize the application, verify cloud connectivity, connect to the edge agent. This application is a [Flask](https://flask.palletsprojects.com/en/2.0.x/) web application running port port 8080 which is integrated with SageMaker Edge Agent and AWS IoT for OTA updates. You will see that, if you have no models deployed yet and have not downloaded any test images, nothing will happen yet in the application. It will stay idle until it can access test images in the `/static` folder and run inference on those with a deployed model. In the next step, we will see how we can run automated model training with SageMaker Pipelines and deploy them onto the edge device for local inference.
 9.  Go to the EC2 dashboard and browse the public IP address on port 8080, i.e. `http://<PUBLIC_IP>:8080`. You should now see the application in your browser window. *(Toubleshoot: ensure that you allow ingress on port 8080 in your instance's security group. Also, make sure your local firewalls on your device allow ingress through port 8080)*
 
@@ -149,9 +149,17 @@ To run inference on the device, you need to have fulfilled the following require
 * You have deployed at least one of the two models (image classification or semantic segmentation) via OTA updates
 * The edge agent is running and the models could be loaded successfully (for troubleshooting check command line output or edge agent logs in `agent/logs/agent.log`)
 
+If everything is configured accordingly, you should see the edge application cycling through the provided images in the `static/` directory and run inference against both of the models. The result of the inference is then displayed in the web application.
+
 ### Deploying new model versions to the edge
 
-You can now continuously retrain your model on new data or with new parameter configurations and deploy them onto the edge device by running again through steps 1-5 in [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines). Your application on the edge device will automatically download the new model packages (if the versions provided is higher than the one used currently). It then unloads old model version from the edge agent and loads the newer version once available. It persists its model configuration in the JSON file described in section 5 of [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines).
+You can now continuously retrain your model on new data or with new parameter configurations and deploy them onto the edge device by running again through steps 1-5 in [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines). Your application on the edge device will automatically download the new model packages (if the version provided is higher than the one used currently). It then unloads old model version from the edge agent and loads the newer version once available. It persists its model configuration in the JSON file described in section 5 of [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines).
+
+## References
+
+* aws-samples GitHub Repository "ML@Edge with SageMaker Edge Manager" 
+https://github.com/aws-samples/amazon-sagemaker-edge-manager-workshop
+* Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation. MICCAI. https://arxiv.org/abs/1505.04597
 
 ## Security
 
