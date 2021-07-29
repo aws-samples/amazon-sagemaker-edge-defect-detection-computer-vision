@@ -155,6 +155,10 @@ If everything is configured accordingly, you should see the edge application cyc
 
 You can now continuously retrain your model on new data or with new parameter configurations and deploy them onto the edge device by running again through steps 1-5 in [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines). Your application on the edge device will automatically download the new model packages (if the version provided is higher than the one used currently). It then unloads old model version from the edge agent and loads the newer version once available. It persists its model configuration in the JSON file described in section 5 of [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines).
 
+### Productionizing the solution
+
+This workshop showcases a simple way of managing deployments of multiple CV models onto an edge device for defect detection use cases. For the sake of simplicity, we run certain steps in a manual fashion by e.g. preparing and deploying models from a Sagemaker Studio notebook. In a production setting, we recommend using dedicated pipelines both for the model building component as well as for the deployment component. Similar to the [MLOps reference architecture as outlined in the AWS blog](https://aws.amazon.com/blogs/apn/taming-machine-learning-on-aws-with-mlops-a-reference-architecture/), one would use Amazon EventBridge event rules to kick off the deployment process after a approval of a new version in the model registry has been detected. Likewise, the pipeline execution would be triggered by either a commit to a connected code repository or by other events that require retraining (e.g. detected model drift or new incoming data).
+
 ## References
 
 * aws-samples GitHub Repository "ML@Edge with SageMaker Edge Manager" 
