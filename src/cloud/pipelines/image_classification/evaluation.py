@@ -32,8 +32,7 @@ from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 # Constants
 
 # The images size used
-IMAGE_WIDTH = 224
-IMAGE_HEIGHT = 224
+
 CLASS_LABELS = ['good', 'bad']
 
 logger = logging.getLogger()
@@ -44,6 +43,8 @@ ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--image-width', type=int, default=230)
+    parser.add_argument('--image-height', type=int, default=630)
     args, _ = parser.parse_known_args()
 
     logger.info('Received arguments {}'.format(args))
@@ -52,6 +53,9 @@ if __name__=='__main__':
     test_data_base_path = '/opt/ml/processing/test'
     model_data_base_path = '/opt/ml/processing/model'
     report_output_base_path = '/opt/ml/processing/report'
+    
+    IMAGE_WIDTH = int(args.image_width)
+    IMAGE_HEIGHT = int(args.image_height)
 
     # Unzipping the model
     model_filename = 'model.tar.gz'
@@ -86,7 +90,7 @@ if __name__=='__main__':
     # Load test data into record iterator (batch size 1)
     test_data = mx.io.ImageRecordIter(
         path_imgrec = os.path.join(test_data_base_path, 'test.rec'),
-        data_shape  = (3, 224, 224),
+        data_shape  = (3, IMAGE_WIDTH, IMAGE_HEIGHT),
         batch_size  = 1,
         shuffle     = True
     )

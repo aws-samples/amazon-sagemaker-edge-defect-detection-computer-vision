@@ -84,6 +84,26 @@ def get_pipeline(
         name="ProcessingInstanceCount",
         default_value=1
     )
+    
+    # Input shape
+    input_shape_width = ParameterInteger( # image width of the training images
+        name="InputShapeWidth",
+        default_value=230
+    )
+    input_shape_height = ParameterInteger( # image height of the training images
+        name="InputShapeHeight",
+        default_value=630
+    )
+    
+    # Augement Count
+    augment_count_normal = ParameterInteger( # image width of the training images
+        name="AugmentCountNormal",
+        default_value=0
+    )
+    augment_count_anomalous = ParameterInteger( # image height of the training images
+        name="AugmentCountAnomalous",
+        default_value=0
+    )
 
     # Training
     training_instance_type = ParameterString( # instance type for training the model
@@ -159,7 +179,13 @@ def get_pipeline(
             ProcessingOutput(output_name='val_data', source='/opt/ml/processing/val'),
             ProcessingOutput(output_name='preprocessing_report', source='/opt/ml/processing/report')
         ],
-        job_arguments=['--split', '0.1', '--augment-count', '500'],
+        job_arguments=[
+            '--split', '0.1',
+            '--augment-count-normal', str(augment_count_normal),
+            '--augment-count-anomalous', str(augment_count_anomalous),
+            '--image-width', str(input_shape_width),
+            '--image-height', str(input_shape_height)
+        ],
         property_files=[preprocessing_report]
     )
 
@@ -177,14 +203,14 @@ def get_pipeline(
     )
     ic_estimator.set_hyperparameters(
         num_layers=18,
-        image_shape = "3,224,224",
+        image_shape = "3,%s,%s" % (str(input_shape_width), str(input_shape_height)),
         num_classes=NUM_CLASSES,
         mini_batch_size=BATCH_SIZE,
         num_training_samples=training_num_training_samples,
         epochs=training_epochs,
         learning_rate=0.01,
         top_k=2,
-        use_pretrained_model=1,
+        use_pretrained_model=0,
         precision_dtype='float32'
     )
 
@@ -233,7 +259,11 @@ def get_pipeline(
         outputs=[
             ProcessingOutput(output_name='evaluation_report', source='/opt/ml/processing/report')
         ],
-        property_files=[evaluation_report]
+        property_files=[evaluation_report],
+        job_arguments=[
+            '--image-width', str(input_shape_width),
+            '--image-height', str(input_shape_height)
+        ],
     )
 
     model_metrics = ModelMetrics(
@@ -280,6 +310,10 @@ def get_pipeline(
         parameters=[
             processing_instance_type,
             processing_instance_count,
+            input_shape_width,
+            input_shape_height,
+            augment_count_normal,
+            augment_count_anomalous,
             training_instance_type,
             training_instance_count,
             training_num_training_samples,

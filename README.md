@@ -16,6 +16,12 @@ The architecture we will build during this workshop is illustrated below. Severa
 
 This workshop is designed to be used with any dataset for defect detection that includes labels and masks. To be able to use both models (see section [Models](#models)), you will need a dataset of labelled images (*normal* and *anomalous*) as well as a set of respective *ground truth masks* which identify where the defect on a part is located. To train the models with the provided pipeline without any major code adjustments, you merely need to upload the dataset in the format together with correct path prefixes in an S3 bucket. Please refer to the [Getting Started](#getting-started) guide below on more details for model training with a dataset.
 
+However, for simplicity of this walkthrough, we will showcase the end-to-end solution using the [KolektorSDD2](https://www.vicos.si/resources/kolektorsdd2/) dataset for defect detection. This dataset consists of over 3000 images of surface defects together with respective binary masks which identify the location of those defects in the image. This makes this dataset very much suitable for our use case.
+
+Please find below examples of those images and their masks as provided in the dataset. The image was taken from the website of the creators of the KolektorSDD2 dataset.
+
+![kolektorimg](img/kolektor-sdd2.png)
+
 ## Models
 
 In this workshop, you will build two types of machine learning models:
@@ -159,11 +165,18 @@ You can now continuously retrain your model on new data or with new parameter co
 
 This workshop showcases a simple way of managing deployments of multiple CV models onto an edge device for defect detection use cases. For the sake of simplicity, we run certain steps in a manual fashion by e.g. preparing and deploying models from a Sagemaker Studio notebook. In a production setting, we recommend using dedicated pipelines both for the model building component as well as for the deployment component. Similar to the [MLOps reference architecture as outlined in the AWS blog](https://aws.amazon.com/blogs/apn/taming-machine-learning-on-aws-with-mlops-a-reference-architecture/), one would use Amazon EventBridge event rules to kick off the deployment process after a approval of a new version in the model registry has been detected. Likewise, the pipeline execution would be triggered by either a commit to a connected code repository or by other events that require retraining (e.g. detected model drift or new incoming data).
 
+### Troubleshooting
+
+* **Issue**: My application running on EC2 is not accessible through via public IP address.
+&rarr; Make sure you opened up the port your application is running on in the security group attached to the instance. In case you cannot access the application through any other port than port 80, you could try to map the port 80 to 8080 by configuring a NAT redirect using the *iptables* command line tool as follows: `sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
+
+
 ## References
 
 * aws-samples GitHub Repository "ML@Edge with SageMaker Edge Manager" 
 https://github.com/aws-samples/amazon-sagemaker-edge-manager-workshop
 * Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation. MICCAI. https://arxiv.org/abs/1505.04597
+* Bozic, J., Tabernik, D. & Skocaj, D. (2021). Mixed supervision for surface-defect detection: from weakly to fully supervised learning. Computers in Industry. https://arxiv.org/abs/2104.06064
 
 ## Security
 

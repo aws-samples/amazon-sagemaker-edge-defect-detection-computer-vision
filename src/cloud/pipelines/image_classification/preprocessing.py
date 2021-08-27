@@ -31,9 +31,6 @@ from sklearn.model_selection import train_test_split
 PREFIX_NAME_NORMAL = 'normal'
 PREFIX_NAME_ANOMALOUS = 'anomalous'
 
-# The images size used
-IMAGE_WIDTH = 224
-IMAGE_HEIGHT = 224
 
 # Download im2rec.py tool for RecordIO conversion
 filename_im2rec_tool = wget.download("https://raw.githubusercontent.com/apache/incubator-mxnet/master/tools/im2rec.py")
@@ -86,7 +83,10 @@ def resize_images(path, width, height):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--augment-count', type=int, default=0)
+    parser.add_argument('--augment-count-normal', type=int, default=0)
+    parser.add_argument('--augment-count-anomalous', type=int, default=0)
+    parser.add_argument('--image-width', type=int, default=230)
+    parser.add_argument('--image-height', type=int, default=630)
     parser.add_argument('--split', type=float, default=0.1)
     args, _ = parser.parse_known_args()
 
@@ -101,16 +101,21 @@ if __name__=='__main__':
 
     input_path_normal = os.path.join(input_data_base_path, PREFIX_NAME_NORMAL)
     input_path_anomalous = os.path.join(input_data_base_path, PREFIX_NAME_ANOMALOUS)
+    
+    # The images size used
+    IMAGE_WIDTH = int(args.image_width)
+    IMAGE_HEIGHT = int(args.image_height)
 
     # Resize the images in-place in the container image
-    print('Resizing images...')
+    print('Resizing images')
     resize_images(input_path_normal, IMAGE_WIDTH, IMAGE_HEIGHT)
     resize_images(input_path_anomalous, IMAGE_WIDTH, IMAGE_HEIGHT)
 
     # Augment images if needed
     # TODO: Fix hardcoded augment count, get from parameter
-    augment_data(input_path_normal, int(args.augment_count))
-    augment_data(input_path_anomalous, int(args.augment_count))
+    print('Augmenting images')
+    augment_data(input_path_normal, int(args.augment_count_normal))
+    augment_data(input_path_anomalous, int(args.augment_count_anomalous))
 
     # Create train test validation split
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(input_data_base_path, split=float(args.split))

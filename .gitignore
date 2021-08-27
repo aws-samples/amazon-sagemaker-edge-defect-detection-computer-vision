@@ -1,3 +1,6 @@
 .DS_STORE
 __pycache__/
 .ipynb_checkpoints
+
+# Ignore the data directory in git to not upload large files to repo
+src/cloud/data/
