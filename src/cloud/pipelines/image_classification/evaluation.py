@@ -43,8 +43,8 @@ ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image-width', type=int, default=230)
-    parser.add_argument('--image-height', type=int, default=630)
+    parser.add_argument('--image-width', type=int, default=224)
+    parser.add_argument('--image-height', type=int, default=224)
     args, _ = parser.parse_known_args()
 
     logger.info('Received arguments {}'.format(args))

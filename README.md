@@ -18,7 +18,7 @@ This workshop is designed to be used with any dataset for defect detection that 
 
 However, for simplicity of this walkthrough, we will showcase the end-to-end solution using the [KolektorSDD2](https://www.vicos.si/resources/kolektorsdd2/) dataset for defect detection. This dataset consists of over 3000 images of surface defects together with respective binary masks which identify the location of those defects in the image. This makes this dataset very much suitable for our use case.
 
-Please find below examples of those images and their masks as provided in the dataset. The image was taken from the website of the creators of the KolektorSDD2 dataset.
+Below you can find examples of those images and their masks as provided in the dataset. The image was taken from the [website](https://www.vicos.si/resources/kolektorsdd2/) of the creators of the KolektorSDD2 dataset (see also [Bozic et al., 2021] under [References](#references) ).
 
 ![kolektorimg](img/kolektor-sdd2.png)
 
@@ -63,6 +63,7 @@ src/edge
 src/cloud
 ├── image_classification_pipeline.ipynb     <-- notebook for running the image classification pipeline
 ├── semantic_segmentation_pipeline.ipynb    <-- notebook for running the semantic segmentation pipeline
+├── data_preparation.ipynb                  <-- notebook for data preprocessing of the KolektorSDD2 dataset
 └── pipelines                               <-- model building code and pipeline definition
     ├── get_pipeline_definition.py          <-- CLI tool for CICD
     ├── run_pipeline.py                     <-- CLI tool for CICD
@@ -78,13 +79,13 @@ src/cloud
 
 ```
 
-## Getting started
+## Walkthrough
 
-Please follow the steps below to start building your own edge ML project. Please note that model training in the cloud and running inference on the edge are interdependent of each other. We recommend you start by setting up the edge device first and then train the models as a second step. You can then directly deploy them to the edge after you have successfully trained the models.
+Please follow the steps below to start building your own edge ML project. Please note that model training in the cloud and running inference on the edge are interdependent of each other. We recommend you start by setting up the edge device first and then train the models as a second step. This way, you can then directly deploy them to the edge after you have successfully trained the models.
 
 ### Setting up workshop resources by launching the CloudFormation stack
 
-1. Launch a new CloudFormation stack with the provided template under `setup/template.yaml`.
+1. Launch a new CloudFormation stack with the provided template under `setup/template.yaml`. To learn about how to deploy CloudFormation stacks, please refer to the [documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
 2. Define a name for the stack and enter a *Project Name* parameter, that is unique in your account. The project name that you define during stack creation defines the name of many of the resources that are being created with the stack. Make sure to take note of this parameter.
 3. Have a look at the CloudFormation stack outputs and take note of the provided information.
 
@@ -113,14 +114,20 @@ This stack configures several resources needed for this workshop. It sets up an 
 
 1. Create a SageMaker Studio domain and user by following [this](https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks.html) guide in the documentation. Make sure that the IAM role used has access to the S3 bucket created during the CloudFormation deployment.
 2. Clone this repository or copy the `src/cloud` directory onto the SageMaker Studio domain.
-3. Prepare your dataset for training: with the provided pipeline code you can train two model types (image classification and semantic segmentation). You might want to set aside some images to be used for local inference. Download those onto the edge device and save them into the `static` folder so they can be used for inference by the edge application. To use the pipelines without any code modifications you need to use structure your datasets as follows:
+3. Prepare your dataset for training. In case you choose to use the KolektorSDD2 dataset like in this example, you can use the provided notebook under `src/cloud/data_preparation.ipynb` to download the dataset and partition it into the subdirectories needed for the training pipeline. With the provided pipeline code you can train two model types (image classification and semantic segmentation). You might want to set aside some images to be used for local inference. Download those onto the edge device and save them into the `static` folder so they can be used for inference by the edge application. Please note that we integrated a step in the preprocessing scripts to add a padding around the images in order to make them square, as the KolektorSDD2 dataset contains non-square images. If your provided images are already square, this step will be skipped. Just ensure that you use the same preprocessing for inference later (i.e. add padding if padding was added for training).
+4. To use the pipelines without any code modifications you need to use structure your datasets as follows:
    * **Image Classification**: Your dataset needs to be split into `normal` and `anomalous` directories according to their respective label. Upload the data to your S3 bucket (e.g. under `s3://<BUCKET-NAME>/data/img-classification/`). Thus, your normal images will be located in `s3://<BUCKET-NAME>/data/img-classification/normal` and the anomalous ones in `s3://<BUCKET-NAME>/data/img-classification/anomalous`. Train / test / validation split will be done automatically in the preprocessing step of the pipeline.
    * **Semantic Segmentation**: Your dataset needs to be split into `images` and `masks` directories. Upload the data to your S3 bucket (e.g. under `s3://<BUCKET-NAME>/data/semantic-segmentation/`). Thus, your images will be located in `s3://<BUCKET-NAME>/data/semantic-segmentation/images` and the binary masks in `s3://<BUCKET-NAME>/data/semantic-segmentation/masks`. Train / test / validation split will be done automatically in the preprocessing step of the pipeline.
-4. Execute the training pipeline: you will find a Jupyter Notebook for each of the model types in `src/cloud/`. Please adjust the project name you used during the CloudFormation deployment in the notebook. Also, you need to provide the S3 input data path as a parameter of the pipeline. Please make sure this aligns with the S3 path you used for uploading the dataset in step 3. You can monitor the pipeline execution in your SageMaker Studio domain. In case it finishes successfully, it should look similar to the one displayed below.
+5. Execute the training pipeline: you will find a Jupyter Notebook for each of the model types in `src/cloud/`. Please adjust the project name you used during the CloudFormation deployment in the notebook. Also, you need to provide the S3 input data path as a parameter of the pipeline. Please make sure this aligns with the S3 path you used for uploading the dataset in step 3. You can monitor the pipeline execution in your SageMaker Studio domain. In case it finishes successfully, it should look similar to the one displayed below.
 
 ![pipeline](img/pipeline.png)
 
-5. Once the pipeline finished successfully, your model is almost ready for use on the edge device. Verify that the latest model version in the model registry is approved to make it available for edge deployment. Execute the following cells of the notebook to run model compilation with SageMaker Neo and then package the model for usage with SageMaker Edge Manager. Finally, you can deploy the model package onto the edge by running the IoT Job as an Over-The-Air update. If your edge application is currently running, it should receive the OTA deployment job, download the model package and load it into the Edge Agent. Please verify that it works by checking the log output on the edge device. You can also verify the successful deployment of a new model version by verifying the successful execution of the IoT job in the AWS IoT Core Console (under "Manage" --> "Jobs") as shown below.
+### Edge deployment and inference at edge
+
+1. Once the pipeline finished successfully, your model is almost ready for use on the edge device. Verify that the latest model version in the model registry is approved to make it available for edge deployment.
+2. Execute the following cells of the notebook to run model compilation with SageMaker Neo and then package the model for usage with SageMaker Edge Manager. 
+3. Finally, you can deploy the model package onto the edge by running the IoT Job as an Over-The-Air update. If your edge application is currently running, it should receive the OTA deployment job, download the model package and load it into the Edge Agent. 
+4. Verify that the deployment automation works by checking the log output on the edge device. You can also verify the successful deployment of a new model version by verifying the successful execution of the IoT job in the AWS IoT Core Console (under "Manage" --> "Jobs") as shown below.
 
 ![pipeline](img/iot_job.png)
 
@@ -146,7 +153,7 @@ In `"mappings"`, you can define which model should be used for each of the two i
 }
 ```
 
-### Running inference on the edge device
+#### Running inference on the edge device
 
 To run inference on the device, you need to have fulfilled the following requirements:
 
@@ -157,7 +164,7 @@ To run inference on the device, you need to have fulfilled the following require
 
 If everything is configured accordingly, you should see the edge application cycling through the provided images in the `static/` directory and run inference against both of the models. The result of the inference is then displayed in the web application.
 
-### Deploying new model versions to the edge
+#### Continuously deploying new model versions to the edge
 
 You can now continuously retrain your model on new data or with new parameter configurations and deploy them onto the edge device by running again through steps 1-5 in [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines). Your application on the edge device will automatically download the new model packages (if the version provided is higher than the one used currently). It then unloads old model version from the edge agent and loads the newer version once available. It persists its model configuration in the JSON file described in section 5 of [Automated model training in the cloud with Sagemaker Pipelines](#automated-model-training-in-the-cloud-with-sagemaker-pipelines).
 
@@ -165,11 +172,12 @@ You can now continuously retrain your model on new data or with new parameter co
 
 This workshop showcases a simple way of managing deployments of multiple CV models onto an edge device for defect detection use cases. For the sake of simplicity, we run certain steps in a manual fashion by e.g. preparing and deploying models from a Sagemaker Studio notebook. In a production setting, we recommend using dedicated pipelines both for the model building component as well as for the deployment component. Similar to the [MLOps reference architecture as outlined in the AWS blog](https://aws.amazon.com/blogs/apn/taming-machine-learning-on-aws-with-mlops-a-reference-architecture/), one would use Amazon EventBridge event rules to kick off the deployment process after a approval of a new version in the model registry has been detected. Likewise, the pipeline execution would be triggered by either a commit to a connected code repository or by other events that require retraining (e.g. detected model drift or new incoming data).
 
-### Troubleshooting
+### Troubleshooting and FAQ
 
-* **Issue**: My application running on EC2 is not accessible through via public IP address.
-&rarr; Make sure you opened up the port your application is running on in the security group attached to the instance. In case you cannot access the application through any other port than port 80, you could try to map the port 80 to 8080 by configuring a NAT redirect using the *iptables* command line tool as follows: `sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
-
+* *The application running on EC2 is not accessible through via public IP address.*
+Make sure you opened up the port your application is running on in the security group attached to the instance. In case you cannot access the application through any other port than port 80, you could try to map the port 80 to 8080 by configuring a NAT redirect using the *iptables* command line tool as follows: `sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080`
+* *The edge application fails due to errors related with SageMaker Edge Manager*
+You can try to restart the edge agent by killing the running process and starting edge agent again with the provided shell script. Make sure that `models_config.json` is configured such that desired models get loaded automatically upon application start. You can also check out the agent logs under `agent/logs` for troubleshooting.
 
 ## References
 

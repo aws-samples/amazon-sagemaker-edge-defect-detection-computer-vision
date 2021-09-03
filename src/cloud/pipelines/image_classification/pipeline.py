@@ -14,7 +14,8 @@ from sagemaker.estimator import Estimator
 from sagemaker.processing import ProcessingInput, ProcessingOutput
 from sagemaker.workflow.steps import ProcessingStep, TrainingStep, CreateModelStep, CacheConfig
 from sagemaker.workflow.properties import PropertyFile
-from sagemaker.workflow.condition_step import JsonGet, ConditionStep
+from sagemaker.workflow.functions import Join, JsonGet
+from sagemaker.workflow.condition_step import ConditionStep
 from sagemaker.workflow.conditions import ConditionGreaterThanOrEqualTo
 from sagemaker.inputs import TrainingInput, CreateModelInput
 from sagemaker.workflow.step_collections import RegisterModel
@@ -86,23 +87,21 @@ def get_pipeline(
     )
     
     # Input shape
-    input_shape_width = ParameterInteger( # image width of the training images
-        name="InputShapeWidth",
-        default_value=230
-    )
-    input_shape_height = ParameterInteger( # image height of the training images
-        name="InputShapeHeight",
-        default_value=630
+    # --> Image size (height and width, as we need only use square images) desired for training. The 
+    # pipeline will square the images to this size if they are not square already by adding padding.
+    target_image_size = ParameterString( 
+        name="TargetImageSize",
+        default_value="224"
     )
     
     # Augement Count
-    augment_count_normal = ParameterInteger( # image width of the training images
+    augment_count_normal = ParameterString( # by how many samples you want to augment the normal samples
         name="AugmentCountNormal",
-        default_value=0
+        default_value="0"
     )
-    augment_count_anomalous = ParameterInteger( # image height of the training images
+    augment_count_anomalous = ParameterString( # by how many samples you want to augment the anomalous samples
         name="AugmentCountAnomalous",
-        default_value=0
+        default_value="0"
     )
 
     # Training
@@ -120,7 +119,7 @@ def get_pipeline(
     )
     training_num_training_samples = ParameterString(
         name="TrainingNumTrainingSamples",
-        default_value="1000"
+        default_value="3600" # Change this to the number of training samples used!
     )
 
     # Dataset input data: S3 path
@@ -164,7 +163,7 @@ def get_pipeline(
         output_name='preprocessing_report',
         path='preprocessing_report.json'
     )
-
+    
     # Preprocessing Step
     step_process = ProcessingStep(
         name="DefectDetectionPreprocessing",
@@ -181,15 +180,28 @@ def get_pipeline(
         ],
         job_arguments=[
             '--split', '0.1',
-            '--augment-count-normal', str(augment_count_normal),
-            '--augment-count-anomalous', str(augment_count_anomalous),
-            '--image-width', str(input_shape_width),
-            '--image-height', str(input_shape_height)
+            '--augment-count-normal', augment_count_normal,
+            '--augment-count-anomalous', augment_count_anomalous,
+            '--image-width', target_image_size,
+            '--image-height', target_image_size
         ],
         property_files=[preprocessing_report]
     )
 
     # Define Image Classification Estimator
+    hyperparameters = {
+        'num_layers': 18,
+        'image_shape': Join(on=',', values=['3', target_image_size, target_image_size]),
+        'num_classes': NUM_CLASSES,
+        'mini_batch_size': BATCH_SIZE,
+        'num_training_samples': training_num_training_samples,
+        'epochs': training_epochs,
+        'learning_rate': 0.01,
+        'top_k': 2,
+        'use_pretrained_model': 1,
+        'precision_dtype': 'float32'
+    }
+    
     ic_estimator = Estimator(
         image_uri=training_image,
         role=role,
@@ -200,20 +212,9 @@ def get_pipeline(
         input_mode= 'Pipe',
         base_job_name='img-classification-training',
         output_path='s3://{}/{}/{}/{}'.format(default_bucket, 'models', base_job_prefix, 'training-output'),
+        hyperparameters=hyperparameters
     )
-    ic_estimator.set_hyperparameters(
-        num_layers=18,
-        image_shape = "3,%s,%s" % (str(input_shape_width), str(input_shape_height)),
-        num_classes=NUM_CLASSES,
-        mini_batch_size=BATCH_SIZE,
-        num_training_samples=training_num_training_samples,
-        epochs=training_epochs,
-        learning_rate=0.01,
-        top_k=2,
-        use_pretrained_model=0,
-        precision_dtype='float32'
-    )
-
+    
     step_train = TrainingStep(
         name="DefectDetectionImageClassificationTrain",
         estimator=ic_estimator,
@@ -261,8 +262,8 @@ def get_pipeline(
         ],
         property_files=[evaluation_report],
         job_arguments=[
-            '--image-width', str(input_shape_width),
-            '--image-height', str(input_shape_height)
+            '--image-width', target_image_size,
+            '--image-height', target_image_size
         ],
     )
 
@@ -292,7 +293,7 @@ def get_pipeline(
     # Condition step for evaluating model quality and branching execution
     cond_lte = ConditionGreaterThanOrEqualTo(  # You can change the condition here
         left=JsonGet(
-            step=step_eval,
+            step_name=step_eval.name,
             property_file=evaluation_report,
             json_path="multiclass_classification_metrics.accuracy.value",  # This should follow the structure of your report_dict defined in the evaluate.py file.
         ),
@@ -310,8 +311,7 @@ def get_pipeline(
         parameters=[
             processing_instance_type,
             processing_instance_count,
-            input_shape_width,
-            input_shape_height,
+            target_image_size,
             augment_count_normal,
             augment_count_anomalous,
             training_instance_type,

@@ -36,21 +36,21 @@ PREFIX_NAME_ANOMALOUS = 'anomalous'
 filename_im2rec_tool = wget.download("https://raw.githubusercontent.com/apache/incubator-mxnet/master/tools/im2rec.py")
 
 def augment_data(path, sample_count):
-    """Augments the image dataset in the given path by adding rotation, zoom,,
+    """Augments the image dataset in the given path by adding rotation, zoom,
     brightness, contrast to the dataset"""
     p = Augmentor.Pipeline(path, output_directory=path)
 
     # Define augmentation operations
-    p.rotate(probability=0.4, max_left_rotation=8, max_right_rotation=8)
-    p.zoom(probability=0.3, min_factor=1.1, max_factor=1.3)
+    #p.rotate(probability=0.4, max_left_rotation=8, max_right_rotation=8)
+    #p.zoom(probability=0.3, min_factor=1.1, max_factor=1.3)
     p.random_brightness(probability=0.3, min_factor=0.4, max_factor=0.9)
-    p.random_contrast(probability=0.2, min_factor=0.9, max_factor=1.4)
+    p.random_contrast(probability=0.2, min_factor=0.9, max_factor=1.1)
 
     p.sample(sample_count)
 
 
-def load_data(path, split=0.1):
-    """Load the images from the path and do a train-test-split"""
+def split_dataset(path, split=0.1):
+    """Split the images into train-test-validation and move them into separate folder each (named train, test, val)"""
 
     label_map = { 'good': 0, 'bad': 1 }
     bad = sorted(glob(os.path.join(path, "%s/*" % PREFIX_NAME_ANOMALOUS)))
@@ -62,7 +62,8 @@ def load_data(path, split=0.1):
     total_size = len(images)
     valid_size = int(split * total_size)
     test_size = int(split * total_size)
-    print('Total size:', total_size)
+    print('Total number of samples (normal and anomalous):', total_size)
+    
     train_x, valid_x = train_test_split(images, test_size=valid_size, random_state=42)
     train_y, valid_y = train_test_split(labels, test_size=valid_size, random_state=42)
 
@@ -79,14 +80,39 @@ def resize_images(path, width, height):
         im = Image.open(file)
         im_resized = im.resize((width, height), Image.ANTIALIAS)
         im_resized.save(file)
+        
 
+def get_square_image(img):
+    """Returns a squared image by adding black padding"""
+    padding_color = (0, 0, 0)
+    width, height = img.size
+    if width == height:
+        return img
+    elif width > height:
+        result = Image.new(img.mode, (width, width), padding_color)
+        result.paste(img, (0, (width - height) // 2))
+        return result
+    else:
+        result = Image.new(img.mode, (height, height), padding_color)
+        result.paste(img, ((height - width) // 2, 0))
+        return result
 
+def square_images(path):
+    """Squares all images in a given path (in-place). Please note that this
+    method overwrites existing images in the path."""
+    files = glob(os.path.join(path, '*.png')) + glob(os.path.join(path, '*.jpg'))
+    for file in files:
+        im = Image.open(file)
+        im_squared = get_square_image(im)
+        im_squared.save(file)
+
+        
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--augment-count-normal', type=int, default=0)
     parser.add_argument('--augment-count-anomalous', type=int, default=0)
-    parser.add_argument('--image-width', type=int, default=230)
-    parser.add_argument('--image-height', type=int, default=630)
+    parser.add_argument('--image-width', type=int, default=224)
+    parser.add_argument('--image-height', type=int, default=224)
     parser.add_argument('--split', type=float, default=0.1)
     args, _ = parser.parse_known_args()
 
@@ -98,6 +124,7 @@ if __name__=='__main__':
     test_output_base_path = '/opt/ml/processing/test'
     val_output_base_path = '/opt/ml/processing/val'
     report_output_base_path = '/opt/ml/processing/report'
+    temp_data_base_path = 'opt/ml/processing/tmp'
 
     input_path_normal = os.path.join(input_data_base_path, PREFIX_NAME_NORMAL)
     input_path_anomalous = os.path.join(input_data_base_path, PREFIX_NAME_ANOMALOUS)
@@ -105,20 +132,28 @@ if __name__=='__main__':
     # The images size used
     IMAGE_WIDTH = int(args.image_width)
     IMAGE_HEIGHT = int(args.image_height)
-
+    
+    # Augment images if needed
+    # TODO: Only augment training images, not entire dataset!
+    print('Augmenting images...')
+    augment_data(input_path_normal, int(args.augment_count_normal))
+    augment_data(input_path_anomalous, int(args.augment_count_anomalous))
+    
+    # Square all the images to ensure that only squared images exist in the training datset by adding a black padding around the image
+    # IMPORTANT: Make sure you do the same when running inference
+    print('Squaring all images that are not squared already...')
+    square_images(input_path_normal)
+    square_images(input_path_anomalous)
+    
     # Resize the images in-place in the container image
-    print('Resizing images')
+    print('Resizing images...')
     resize_images(input_path_normal, IMAGE_WIDTH, IMAGE_HEIGHT)
     resize_images(input_path_anomalous, IMAGE_WIDTH, IMAGE_HEIGHT)
 
-    # Augment images if needed
-    # TODO: Fix hardcoded augment count, get from parameter
-    print('Augmenting images')
-    augment_data(input_path_normal, int(args.augment_count_normal))
-    augment_data(input_path_anomalous, int(args.augment_count_anomalous))
-
     # Create train test validation split
-    (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(input_data_base_path, split=float(args.split))
+    # FIXME: only augment train dataset, not the test dataset!
+    (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = split_dataset(input_data_base_path, split=float(args.split))
+   
 
     # Create list files for RecordIO transformation
     base_dir_recordio = './'

@@ -33,6 +33,8 @@ SM_EDGE_MODEL_PATH = os.path.join(SM_EDGE_AGENT_HOME, 'model/dev')
 SM_EDGE_CONFIGFILE_PATH = os.path.join(SM_EDGE_AGENT_HOME, 'conf/config_edge_device.json')
 CONFIG_FILE_PATH = './models_config.json'
 SM_APP_ENV = os.environ['SM_APP_ENV']
+IMG_WIDTH = 224
+IMG_HEIGHT = 224
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -78,6 +80,29 @@ def get_model_from_name(name, config_dict):
     else:
         logging.warning('Model object not found in config')
         return None
+
+def get_square_image(img):
+    """Returns a squared image by adding black padding"""
+    padding_color = (0, 0, 0)
+    width, height = img.size
+    if width == height:
+        return img
+    elif width > height:
+        result = PIL.Image.new(img.mode, (width, width), padding_color)
+        result.paste(pil_img, (0, (width - height) // 2))
+        return result
+    else:
+        result = PIL.Image.new(img.mode, (height, height), padding_color)
+        result.paste(img, ((height - width) // 2, 0))
+        return result
+
+
+def preprocess_image(img, img_width, img_height):
+    x = get_square_image(img)
+    x = np.asarray(img.resize((img_width, img_height))).astype(np.float32)
+    x_transposed = x.transpose((2,0,1))
+    x_batchified = np.expand_dims(x_transposed, axis=0)
+    return x_batchified
 
 # Setup model callback method
 def load_model(name, version):
@@ -131,9 +156,7 @@ def run_segmentation_inference(agent, filename):
     image = image.convert(mode='RGB')
 
     # Preprocessing
-    x = np.asarray(image.resize((224, 224))).astype(np.float32)
-    x_transposed = x.transpose((2,0,1))
-    x_batchified = np.expand_dims(x_transposed, axis=0)
+    x_batchified = preprocess_image(image, IMG_WIDTH, IMG_HEIGHT)
 
     # Fit into 0-1 range, as the unet model expects this
     x_batchified = x_batchified/255.0
@@ -172,9 +195,7 @@ def run_classification_inference(agent, filename):
     image = image.convert(mode='RGB')
 
     # Preprocessing
-    x = np.asarray(image.resize((224, 224))).astype(np.float32)
-    x_transposed = x.transpose((2,0,1))
-    x_batchified = np.expand_dims(x_transposed, axis=0)
+    x_batchified = preprocess_image(image, IMG_WIDTH, IMG_HEIGHT)
 
     # Run inference with agent and time taken
     t_start = timer()
@@ -220,6 +241,7 @@ def homepage():
     if y_segm is not None:
         segm_img_encoded = app.create_b64_img_from_mask(y_segm)
         segm_img_decoded_utf8 = segm_img_encoded.decode('utf-8')
+        logging.info('Model latency: t_clf=%fms, t_segm=%fms' % (t_ms_clf, t_ms_segm))
     else:
         segm_img_encoded = None
         segm_img_decoded_utf8 = None
@@ -231,13 +253,12 @@ def homepage():
         y_clf_normal = np.round(y_clf[0], decimals=6)
         y_clf_anomalous = np.round(y_clf[1], decimals=6)
         y_clf_class = clf_class_labels[np.argmax(y_clf)]
-        logging.info('Model latency: t_classification=%fms' % t_ms_clf) 
+        logging.info('Model latency: t_classification=%fms' % t_ms_clf)
     else:
         y_clf_normal = None
         y_clf_anomalous = None
         y_clf_class = None
 
-    logging.info('Model latency: t_clf=%fms, t_segm=%fms' % (t_ms_clf, t_ms_segm))
 
     # Return rendered HTML page with predictions
     return render_template('main.html',

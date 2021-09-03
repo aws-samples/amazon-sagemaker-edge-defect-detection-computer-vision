@@ -15,8 +15,10 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.metrics import Recall, Precision
 from tensorflow.keras import backend as K
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-IMAGE_SIZE=224
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+IMAGE_WIDTH=224
+IMAGE_HEIGHT=224
 
 def parse_args():
     
@@ -39,14 +41,14 @@ def parse_args():
 def read_image(path):
     path = path.decode()
     x = cv2.imread(path, cv2.IMREAD_COLOR)
-    x = cv2.resize(x, (IMAGE_SIZE, IMAGE_SIZE))
+    x = cv2.resize(x, (IMAGE_WIDTH, IMAGE_HEIGHT))
     x = x/255.0
     return x
 
 def read_mask(path):
     path = path.decode()
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = cv2.resize(x, (IMAGE_SIZE, IMAGE_SIZE))
+    x = cv2.resize(x, (IMAGE_WIDTH, IMAGE_HEIGHT))
     x = x/255.0
     x = np.expand_dims(x, axis=-1)
     return x
@@ -58,8 +60,8 @@ def tf_parse(x, y):
         return x, y
 
     x, y = tf.numpy_function(_parse, [x, y], [tf.float64, tf.float64])
-    x.set_shape([IMAGE_SIZE, IMAGE_SIZE, 3])
-    y.set_shape([IMAGE_SIZE, IMAGE_SIZE, 1])
+    x.set_shape([IMAGE_WIDTH, IMAGE_HEIGHT, 3])
+    y.set_shape([IMAGE_WIDTH, IMAGE_HEIGHT, 1])
     return x, y
 
 def tf_dataset(x, y, batch=8):
@@ -71,7 +73,7 @@ def tf_dataset(x, y, batch=8):
 
 
 def model():
-    inputs = Input(shape=(IMAGE_SIZE, IMAGE_SIZE, 3), name="input_image")
+    inputs = Input(shape=(IMAGE_WIDTH, IMAGE_HEIGHT, 3), name="input_image")
     
     encoder = MobileNetV2(input_tensor=inputs, weights="imagenet", include_top=False, alpha=0.35)
     skip_connection_names = ["input_image", "block_1_expand_relu", "block_3_expand_relu", "block_6_expand_relu"]

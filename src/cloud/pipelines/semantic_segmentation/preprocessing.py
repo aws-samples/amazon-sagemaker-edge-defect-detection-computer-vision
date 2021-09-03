@@ -5,7 +5,7 @@ import os
 import subprocess
 
 # Install packages previous to executing the rest of the script. You can also build your own custom container
-#   with your individal dependecies if needed
+#   with your individual dependencies if needed
 subprocess.check_call([sys.executable, "-m", "pip", "install", "wget", "opencv-python","albumentations","tqdm"])
 os.system("apt-get update")
 os.system("apt-get install ffmpeg libsm6 libxext6  -y")
@@ -35,8 +35,6 @@ IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
 
 def augment_data(path, augment=True):
-    H = IMAGE_HEIGHT
-    W = IMAGE_WIDTH
     save_path = path
     images = sorted(glob(os.path.join(path, PREFIX_NAME_IMAGE + "/*")))
     masks = sorted(glob(os.path.join(path, PREFIX_NAME_MASK + "/*")))
@@ -94,8 +92,8 @@ def augment_data(path, augment=True):
         Path(save_path + "/" + PREFIX_NAME_IMAGE ).mkdir(parents=True, exist_ok=True)
         Path(save_path + "/" + PREFIX_NAME_MASK ).mkdir(parents=True, exist_ok=True)
         for i, m in zip(save_images, save_masks):
-            i = cv2.resize(i, (W, H))
-            m = cv2.resize(m, (W, H))
+            i = cv2.resize(i, (IMAGE_WIDTH, IMAGE_HEIGHT))
+            m = cv2.resize(m, (IMAGE_WIDTH, IMAGE_HEIGHT))
 
             if len(images) == 1:
                 tmp_img_name = f"{img_name}.{image_extn}"
@@ -121,6 +119,29 @@ def resize_images(path, width, height):
         im = Image.open(file)
         im_resized = im.resize((width, height), Image.ANTIALIAS)
         im_resized.save(file)
+        
+def get_square_image(img, padding_color=(0, 0, 0)):
+    """Returns a squared image by adding black padding"""
+    width, height = img.size
+    if width == height:
+        return img
+    elif width > height:
+        result = Image.new(img.mode, (width, width), padding_color)
+        result.paste(img, (0, (width - height) // 2))
+        return result
+    else:
+        result = Image.new(img.mode, (height, height), padding_color)
+        result.paste(img, ((height - width) // 2, 0))
+        return result
+
+def square_images(path, padding_color=(0,0,0)):
+    """Squares all images in a given path (in-place). Please note that this
+    method overwrites existing images in the path."""
+    files = glob(os.path.join(path, '*.png')) + glob(os.path.join(path, '*.jpg'))
+    for file in files:
+        im = Image.open(file)
+        im_squared = get_square_image(im, padding_color)
+        im_squared.save(file)
         
 def load_data(path, split=0.1):
     images = sorted(glob(os.path.join(path, PREFIX_NAME_IMAGE + "/*")))
@@ -155,6 +176,10 @@ if __name__=='__main__':
     
     #Augment images and save in new directory
     augment_data(input_data_base_path)
+    
+    print('Squaring images...')
+    square_images(os.path.join(input_data_base_path, PREFIX_NAME_IMAGE))
+    square_images(os.path.join(input_data_base_path, PREFIX_NAME_MASK), padding_color=(0))
     
     # Resize the images in-place in the container image
     print('Resizing images...')
