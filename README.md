@@ -162,7 +162,9 @@ To run inference on the device, you need to have fulfilled the following require
 * You have deployed at least one of the two models (image classification or semantic segmentation) via OTA updates
 * The edge agent is running and the models could be loaded successfully (for troubleshooting check command line output or edge agent logs in `agent/logs/agent.log`)
 
-If everything is configured accordingly, you should see the edge application cycling through the provided images in the `static/` directory and run inference against both of the models. The result of the inference is then displayed in the web application.
+If everything is configured accordingly, you should see the edge application cycling through the provided images in the `static/` directory and run inference against both of the models. The result of the inference is then displayed in the web application. You can see a screenshot of the running web application below. The two models loaded into edge agent are displayed on the top, the incoming image from the camera stream is fed into the two models and the predictions are illustrated on the bottom of the page.
+
+![inference_ui](img/inferece_ui.png)
 
 #### Continuously deploying new model versions to the edge
 
