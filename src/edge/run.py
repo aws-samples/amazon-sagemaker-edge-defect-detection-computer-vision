@@ -98,6 +98,7 @@ def get_square_image(img):
 
 
 def preprocess_image(img, img_width, img_height):
+    """Preprocesses the image before feeding it into the ML model"""
     x = get_square_image(img)
     x = np.asarray(img.resize((img_width, img_height))).astype(np.float32)
     x_transposed = x.transpose((2,0,1))
@@ -106,6 +107,7 @@ def preprocess_image(img, img_width, img_height):
 
 # Setup model callback method
 def load_model(name, version):
+    """Loads the model into the edge agent and unloads previous versions if any."""
     global models_loaded
     version = str(version)
     # Create a model name string as a concatenation of name and version
