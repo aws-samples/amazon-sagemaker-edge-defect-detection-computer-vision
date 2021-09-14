@@ -20,7 +20,7 @@ However, for simplicity of this walkthrough, we will showcase the end-to-end sol
 
 Below you can find examples of those images and their masks as provided in the dataset. The image was taken from the [website](https://www.vicos.si/resources/kolektorsdd2/) of the creators of the KolektorSDD2 dataset (see also [Bozic et al., 2021] under [References](#references) ).
 
-![kolektorimg](img/kolektor-sdd2.png)
+![kolektorimg](img/kolektor_sdd2.png)
 
 ## Models
 
