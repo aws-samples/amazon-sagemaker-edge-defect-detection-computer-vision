@@ -86,7 +86,7 @@ Please follow the steps below to start building your own edge ML project. Please
 ### Setting up workshop resources by launching the CloudFormation stack
 
 1. Launch a new CloudFormation stack with the provided template under `setup/template.yaml`. To learn about how to deploy CloudFormation stacks, please refer to the [documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
-2. Define a name for the stack and enter a *Project Name* parameter, that is unique in your account. The project name that you define during stack creation defines the name of many of the resources that are being created with the stack. Make sure to take note of this parameter.
+2. Define a name for the stack and enter a *Project Name* parameter, that is unique in your account. It must be compliant with Amazon S3 bucket names, so please choose a lowercase string here. The project name that you define during stack creation defines the name of many of the resources that are being created with the stack. Make sure to take note of this parameter.
 3. Have a look at the CloudFormation stack outputs and take note of the provided information.
 
 #### What is being created by the CloudFormation stack?
