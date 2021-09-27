@@ -56,12 +56,13 @@ if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--project-name', type=str, required=True)
     parser.add_argument('--account-id', type=str, required=True)
+    parser.add_argument('--region', type=str, required=True)
     args, _ = parser.parse_known_args()
 
     logger.info('Preparing device...')
 
-    # Infer bucket name from project name and AWS Account ID as created in the CloudFormation template
-    bucket_name = 'sm-edge-workshop-%s-%s' % (args.project_name, args.account_id)
+    # Infer bucket name from project name and AWS Account ID as created in the CDK app
+    bucket_name = '%s-%s-%s' % (args.project_name, args.region, args.account_id)
 
     # Run the installation script
     download_config(bucket_name)

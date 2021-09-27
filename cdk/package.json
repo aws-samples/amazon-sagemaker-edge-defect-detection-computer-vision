@@ -1,0 +1,40 @@
+{
+  "name": "cdk-edge-ml-sm",
+  "version": "0.1.0",
+  "bin": {
+    "cdk-edge-ml-sm": "app.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@aws-cdk/assert": "1.122.0",
+    "@types/jest": "^26.0.10",
+    "@types/node": "10.17.27",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.2.0",
+    "aws-cdk": "1.122.0",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@aws-cdk/core": "1.122.0",
+    "@aws-cdk/custom-resources": "1.122.0",
+    "@aws-cdk/aws-s3": "1.122.0",
+    "@aws-cdk/aws-iam": "1.122.0",
+    "@aws-cdk/aws-iot": "1.122.0",
+    "@aws-cdk/aws-lambda": "1.122.0",
+    "@aws-cdk/aws-servicecatalog": "1.122.0",
+    "@aws-cdk/aws-sagemaker": "1.122.0",
+    "@aws-cdk/aws-events": "1.122.0",
+    "@aws-cdk/aws-events-targets": "1.122.0",
+    "@aws-cdk/aws-lambda-event-sources": "1.122.0",
+    "@aws-cdk/aws-stepfunctions": "1.122.0",
+    "@aws-cdk/aws-stepfunctions-tasks": "1.122.0",
+    "@aws-cdk/aws-codebuild": "1.122.0",
+    "source-map-support": "^0.5.16"
+  }
+}

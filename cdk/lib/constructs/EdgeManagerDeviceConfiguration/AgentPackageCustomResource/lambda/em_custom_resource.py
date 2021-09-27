@@ -18,7 +18,6 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 BUCKET_NAME = os.environ['BUCKET_NAME']
-PROJECT_NAME = os.environ['PROJECT_NAME']
 AWS_REGION = os.environ['AWS_REGION']
 
 LOCAL_DIR_PREFIX = '/tmp/'  # Needed for running in AWS Lambda
@@ -29,22 +28,16 @@ s3_client = boto3.client('s3')
 
 # Global variables
 # This information needs to match with what was defined in the CloudFormation template
-sm_edge_device_name = 'edge-device-defect-detection-%s' % PROJECT_NAME
-iot_policy_name = 'defect-detection-policy-%s' % PROJECT_NAME
-iot_thing_name = 'edge-device-%s' % PROJECT_NAME
-iot_thing_group_name='defect-detection-%s-group' % PROJECT_NAME
-sm_em_fleet_name = 'defect-detection-%s' % PROJECT_NAME
-role_alias = 'SageMakerEdge-%s' % sm_em_fleet_name
+sm_edge_device_name = os.environ['SM_EDGE_DEVICE_NAME']
+iot_policy_name = os.environ['IOT_POLICY_NAME']
+iot_thing_name = os.environ['IOT_THING_NAME']
+iot_thing_group_name= os.environ['IOT_THING_GROUP_NAME']
+sm_em_fleet_name = os.environ['SM_EDGE_FLEET_NAME']
+role_alias_name = os.environ['IOT_ROLE_ALIAS_NAME']
 
 
 def cfn_cleanup():
     """Clean up resources created in the custom resources"""
-
-    LOGGER.info('Deleting role alias if exists')
-    try:
-        iot_client.delete_role_alias(roleAlias=role_alias)
-    except:
-        LOGGER.info('Role alias deletion failed, continuing anyways')
     
     LOGGER.info('Deregistering device from edge fleet if exists')
     try:
@@ -67,10 +60,17 @@ def cfn_cleanup():
     except:
         LOGGER.info('Detaching certificates failed, continuing anyways')
 
+    # TODO: Hack - IoT thing is actually governed by default cloud formation, not by CR. However, otherwise, delete fails
+    LOGGER.info('Deleting IoT thing')
+    try:
+        iot_client.delete_thing(iot_thing_name)
+    except:
+        LOGGER.info('Deleting thing failed, continuing anyways')
 
 
 
-def lambda_handler(event, context):
+
+def handler(event, context):
     '''Handle Lambda event from AWS'''
 
     try:
@@ -142,7 +142,6 @@ def setup_agent(thing_group_name, thing_group_arn):
     onto a Amazon S3 bucket. Registers a device with a device fleet, creates IoT
     certificates and attaches them to the previously created IoT thing. Saves 
     certificates onto local disk to make it ready for uploading to S3.
-
     Args:
         thing_group_name (string): a name for the IoT thing group
         thing_group_arn (string): the ARN of the IoT thing group
@@ -209,7 +208,7 @@ def setup_agent(thing_group_name, thing_group_arn):
         "sagemaker_edge_provider_aws_ca_cert_file":"./agent/certificates/iot/AmazonRootCA1.pem",
         "sagemaker_edge_provider_aws_cert_file":"./%s" % cert_relative,
         "sagemaker_edge_provider_aws_cert_pk_file":"./%s" % key_relative,
-        "sagemaker_edge_provider_aws_iot_cred_endpoint": "https://%s/role-aliases/%s/credentials" % (cred_host,role_alias),
+        "sagemaker_edge_provider_aws_iot_cred_endpoint": "https://%s/role-aliases/%s/credentials" % (cred_host,role_alias_name),
         "sagemaker_edge_provider_provider": "Aws",
         "sagemaker_edge_provider_s3_bucket_name": BUCKET_NAME,
         "sagemaker_edge_core_capture_data_destination": "Cloud"
@@ -224,13 +223,13 @@ def prepare_device_package(event, context):
     # create a new thing group
     thing_group_arn = None
     agent_pkg_bucket = 'sagemaker-edge-release-store-us-west-2-linux-x64'
-    agent_config_package_prefix = 'edge-device-configuration/agent/config.tgz'
+    agent_config_package_prefix = f'edge-device-configuration/agent/{iot_thing_name}/config.tgz'
 
     # check if edge agent package has already been built
+    # TODO: Fix bad coding practices here
     try:
         s3_client.download_file(Bucket=BUCKET_NAME, Key=agent_config_package_prefix, Filename='/tmp/dump')
-        LOGGER.info('The agent configuration package was already built! Skipping...')
-        quit()
+        LOGGER.warn('The agent configuration package was already built! Overwriting old configuration package...')
     except ClientError as e:
         pass
     
