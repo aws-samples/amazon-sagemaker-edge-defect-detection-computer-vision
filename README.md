@@ -34,7 +34,7 @@ In this workshop, you will build two types of machine learning models:
 This repository has the following directory structure:
 
 ```
-├── setup           <-- contains the CloudFormation template for easy-to-use setup of AWS resources
+├── cdk             <-- contains the CDK application for setting up the infrastructure for this project
 └── src             <-- contains the actual source code for this project
     ├── cloud       <-- contains the code for model training in the cloud and initiation of OTA deployments to the edge
     └── edge        <-- contains the code that is running on the edge device
@@ -83,15 +83,15 @@ src/cloud
 
 Please follow the steps below to start building your own edge ML project. Please note that model training in the cloud and running inference on the edge are interdependent of each other. We recommend you start by setting up the edge device first and then train the models as a second step. This way, you can then directly deploy them to the edge after you have successfully trained the models.
 
-### Setting up workshop resources by launching the CloudFormation stack
+### Setting up workshop resources by deploying the CDK application
 
-1. Launch a new CloudFormation stack with the provided template under `setup/template.yaml`. To learn about how to deploy CloudFormation stacks, please refer to the [documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
-2. Define a name for the stack and enter a *Project Name* parameter, that is unique in your account. It must be compliant with Amazon S3 bucket names, so please choose a lowercase string here. The project name that you define during stack creation defines the name of many of the resources that are being created with the stack. Make sure to take note of this parameter.
-3. Have a look at the CloudFormation stack outputs and take note of the provided information.
+1. Install the AWS CDK following the [official guide](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) in the AWS documentation.
+2. Install the dependencies by running `npm install` in the `cdk/` directory of this repository.
+3. Deploy the CDK application by running `cdk deploy --parameters ProjectName=<YOUR PROJECT NAME>`. Choose a project name to assign to this project. You may choose any name, which is compliant with S3 bucket names, e.g. `sm-edge-project`. Make sure to take note of this name, as you will need it later on in the lab.
 
-#### What is being created by the CloudFormation stack?
+#### What is being created by the CDK application?
 
-This stack configures several resources needed for this workshop. It sets up an IoT device together with certificates and roles, an Edge Manager fleet, registers the device with the fleet and creates a package for edge agent configuration which is being saved in the S3 bucket for this project. The following image illustrates the resources being created with the CloudFormation stack.
+*(need to update)* This stack configures several resources needed for this workshop. It sets up an IoT device together with certificates and roles, an Edge Manager fleet, registers the device with the fleet and creates a package for edge agent configuration which is being saved in the S3 bucket for this project. The following image illustrates the resources being created with the CloudFormation stack.
 
 ![edge config](img/cloudformation.png)
 
