@@ -7,7 +7,7 @@ In this workshop, we will walk you through a step by step process to build and t
 The architecture we will build during this workshop is illustrated below. Several key components can be highlighted:
 
 1. **Model development and training on the cloud**: This repository contains code for two pipelines based on [SageMaker Pipelines](https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html) for each of the two model types used (classification and segmentation). These pipelines will be built and executed in a SageMaker Studio notebook.
-2. **Model deployment to the edge**: Once a model building pipeline executed successfully, models will be compiled with [SageMaker Neo](https://aws.amazon.com/sagemaker/neo/) and packaged with a [SageMaker Edge packaging job](https://docs.aws.amazon.com/sagemaker/latest/dg/edge-packaging-job.html). As such, they can be deployed onto the edge device via IoT Jobs. On the edge device an application is running which will receive the model deployment job payload via MQTT and download the relevant model package.
+2. **Model deployment to the edge**: Once a model building pipeline executed successfully, models will be compiled with [SageMaker Neo](https://aws.amazon.com/sagemaker/neo/) and packaged with a [SageMaker Edge packaging job](https://docs.aws.amazon.com/sagemaker/latest/dg/edge-packaging-job.html). As such, they can be deployed onto the edge device via IoT Jobs. On the edge device an application is running which will receive the model deployment job payload via MQTT and download the relevant model package. The process of preparing the trained model for usage on the edge (i.e. compilation with Neo and packaging with Edge Manager) and deploying with AWS IoT is automated by using a step function workflow that is wired up to a approval event from SageMaker Model Registry.
 3. **Edge inference**: The edge device is running the actual application for defect detection. In this workshop, we will use an EC2 instance to simulate an edge device - but any hardware device (RaspberryPi, Nvidia Jetson) can be used as long as SageMaker Neo compilations are supported. During setup, a configuration package is being downloaded to edge device to configure SageMaker Edge Agent. The Edge Agent on the device can then load models deployed via OTA updates and make them available for prediction via a low-latency gRPC API (see [SageMaker Edge Manager documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/edge.html)).
 
 ![architecture](img/architecture.png)
@@ -124,10 +124,11 @@ Please follow the steps below to start building your own edge ML project. Please
 
 ### Edge deployment and inference at edge
 
-1. Once the pipeline finished successfully, your model is almost ready for use on the edge device. Verify that the latest model version in the model registry is approved to make it available for edge deployment.
-2. Execute the following cells of the notebook to run model compilation with SageMaker Neo and then package the model for usage with SageMaker Edge Manager. 
-3. Finally, you can deploy the model package onto the edge by running the IoT Job as an Over-The-Air update. If your edge application is currently running, it should receive the OTA deployment job, download the model package and load it into the Edge Agent. 
-4. Verify that the deployment automation works by checking the log output on the edge device. You can also verify the successful deployment of a new model version by verifying the successful execution of the IoT job in the AWS IoT Core Console (under "Manage" --> "Jobs") as shown below.
+1. Once the pipeline finished successfully, your model is almost ready for use on the edge device. Please first verify that a new model version has been registered in the corresponding Model Package Group in the SageMaker Model Registry.
+2. If you choose to accept the model version, please update the status from "ManualApprovalPending" to "Approved".
+3. This action will emit an EventBridge event and automatically kick off the edge deployment workflow: this workflow starts the Neo Compilation job, the Edge Packaging job and finally creates an IoT job to notify the edge device of the new model update.
+4. Verify that the Step Function workflow executed successfully and also check the IoT job to verify that it was executed successfully on the edge device.
+5. You should now see your new model version in action on the edge application.
 
 ![pipeline](img/iot_job.png)
 
