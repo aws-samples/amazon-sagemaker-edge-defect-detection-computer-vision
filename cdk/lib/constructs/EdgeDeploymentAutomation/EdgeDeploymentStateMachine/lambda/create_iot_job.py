@@ -32,7 +32,7 @@ def handler(event, context):
         ],
         document=json.dumps({
             'type': 'new_model',
-            'model_version': model_version,
+            'model_version': str(model_version),
             'model_name': model_name,
             'model_package_bucket': model_bucket,
             'model_package_key': model_key

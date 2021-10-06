@@ -14,11 +14,10 @@ logging.basicConfig(level=logging.INFO)
 s3_client = boto3.client('s3')
 
 # Default bucket for downloading the SM Edge Agent. Please note that your device needs access to this bucket through IAM
-agent_config_package_prefix = 'edge-device-configuration/agent/config.tgz'
 agent_version = '1.20210512.96da6cc'
 agent_pkg_bucket = 'sagemaker-edge-release-store-us-west-2-linux-x64'
 
-def download_config(bucket_name):
+def download_config(bucket_name, agent_config_package_prefix):
     # Check if agent is installed and configured already
     if not os.path.isdir('agent'):
         logger.info('No SM Edge Agent directory found. Proceding with download of configuration package...')
@@ -55,6 +54,7 @@ def download_config(bucket_name):
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--project-name', type=str, required=True)
+    parser.add_argument('--iot-thing-name', type=str, required=True)
     parser.add_argument('--account-id', type=str, required=True)
     parser.add_argument('--region', type=str, required=True)
     args, _ = parser.parse_known_args()
@@ -64,8 +64,11 @@ if __name__ == '__main__':
     # Infer bucket name from project name and AWS Account ID as created in the CDK app
     bucket_name = '%s-%s-%s' % (args.project_name, args.region, args.account_id)
 
+    # Define the prefix where the configuration package has been uploaded
+    agent_config_package_prefix = f'edge-device-configuration/{args.iot_thing_name}/agent/config.tgz'
+    
     # Run the installation script
-    download_config(bucket_name)
+    download_config(bucket_name, agent_config_package_prefix)
 
     logger.info('Done!')
 

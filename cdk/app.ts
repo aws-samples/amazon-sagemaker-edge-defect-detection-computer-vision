@@ -4,4 +4,5 @@ import * as cdk from '@aws-cdk/core';
 import { CdkEdgeMlSmStack } from './lib/cdk-edge-ml-sm-stack';
 
 const app = new cdk.App();
-new CdkEdgeMlSmStack(app, 'CdkEdgeMlSmStack', {});
+
+new CdkEdgeMlSmStack(app, `CdkEdgeMlSmStack`, {projectName: app.node.tryGetContext('projectName')});

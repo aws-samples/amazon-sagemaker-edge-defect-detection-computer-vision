@@ -87,7 +87,7 @@ Please follow the steps below to start building your own edge ML project. Please
 
 1. Install the AWS CDK following the [official guide](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) in the AWS documentation.
 2. Install the dependencies by running `npm install` in the `cdk/` directory of this repository.
-3. Deploy the CDK application by running `cdk deploy --parameters ProjectName=<YOUR PROJECT NAME>`. Choose a project name to assign to this project. You may choose any name, which is compliant with S3 bucket names, e.g. `sm-edge-project`. Make sure to take note of this name, as you will need it later on in the lab.
+3. Deploy the CDK application by running `cdk deploy --context projectName=<YOUR PROJECT NAME>`. You will need to pass in a project name in form of CDK context to the application. You may choose any name, which is compliant with S3 bucket names, e.g. `sm-edge-project`. Make sure to take note of this name, as you will need it later on in the lab.
 
 #### What is being created by the CDK application?
 

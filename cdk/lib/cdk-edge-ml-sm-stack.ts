@@ -7,16 +7,18 @@ import { EdgeManagerDeviceConfiguration } from './constructs/EdgeManagerDeviceCo
 import { EdgeDeviceRole } from './constructs/EdgeDeviceRole/EdgeDeviceRole';
 import { EdgeDeploymentAutomation } from './constructs/EdgeDeploymentAutomation/EdgeDeploymentAutomation';
 
-export class CdkEdgeMlSmStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+interface CdkEdgeMlSmStackProps extends cdk.StackProps {
+  projectName: string
+};
 
-    // CloudFormation Parameter to set the project name
-    const projectNameParam = new cdk.CfnParameter(this, 'ProjectName', {
-      type: 'String',
-      description: 'The project name of this project, which defined resource names like the name of the S3 bucket created.',
-      allowedPattern: '^[a-z\-]+'
+
+export class CdkEdgeMlSmStack extends cdk.Stack {
+  constructor(scope: cdk.Construct, id: string, props: CdkEdgeMlSmStackProps) {
+    super(scope, id, {
+      stackName: `CdkEdgeMlSmStack-${props.projectName}`,
+      ...props
     });
+
 
     // The bucket where we save model artifacts and the edge device configuration package
     const s3AssetsBucket = new s3.Bucket(this, 'S3AssetsBucket', {
@@ -26,16 +28,16 @@ export class CdkEdgeMlSmStack extends cdk.Stack {
         ignorePublicAcls: true,
         restrictPublicBuckets: true
       },
-      bucketName: `${projectNameParam.valueAsString}-${this.region}-${this.account}`,
+      bucketName: `${props.projectName}-${this.region}-${this.account}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
     // The device role mapped to the IoT Role Alias which will be created by the SM Edge Manager Fleet (see below)
-    const edgeDeviceRole = new EdgeDeviceRole(this, 'EdgeDeviceRole', {assetsBucket: s3AssetsBucket, projectName: projectNameParam.valueAsString});
+    const edgeDeviceRole = new EdgeDeviceRole(this, 'EdgeDeviceRole', {assetsBucket: s3AssetsBucket, projectName: props.projectName});
 
     // Note that this will create a new IoT Role Alias automatically
     const smDeviceFleet = new sagemaker.CfnDeviceFleet(this, 'SMEdgeDeviceFleet', {
-      deviceFleetName: `device-fleet-${projectNameParam.valueAsString}-${this.region}-${this.account}`,
+      deviceFleetName: `device-fleet-${props.projectName}-${this.region}-${this.account}`,
       outputConfig: {
         s3OutputLocation: `s3://${s3AssetsBucket.bucketName}/data/`
       },
@@ -43,21 +45,13 @@ export class CdkEdgeMlSmStack extends cdk.Stack {
     });
 
     // Define the IoT Things and the Edge Manager Configurations for these IoT Things
-    const iotThingName01 = `${projectNameParam.valueAsString}-edge-device-01`;
-    const iotThingName02 = `${projectNameParam.valueAsString}-edge-device-02`;
-    const iotThingGroupName = 'edge-device-test-cdk-group'
+    const iotThingName01 = `${props.projectName}-edge-device-01`;
+    const iotThingGroupName = 'cdk-edge-group'
 
     const edgeManagerDeviceConfig01 = new EdgeManagerDeviceConfiguration(this, 'EdgeManagerDeviceConfig01', {
       assetsBucket: s3AssetsBucket,
       smEdgeDeviceFleet: smDeviceFleet,
       thingName: iotThingName01,
-      thingGroupName: iotThingGroupName
-    });
-
-    const edgeManagerDeviceConfig02 = new EdgeManagerDeviceConfiguration(this, 'EdgeManagerDeviceConfig02', {
-      assetsBucket: s3AssetsBucket,
-      smEdgeDeviceFleet: smDeviceFleet,
-      thingName: iotThingName02,
       thingGroupName: iotThingGroupName
     });
 
@@ -81,11 +75,11 @@ export class CdkEdgeMlSmStack extends cdk.Stack {
 
     // Set up the model package groups for the two models. In this example, we use image classification and semantic segmentation
     const imgClassificationModelPackageGroup = new sagemaker.CfnModelPackageGroup(this, 'ImgClassificationModelPackageGroup', {
-      modelPackageGroupName: `${projectNameParam.valueAsString}-img-classification`
+      modelPackageGroupName: `${props.projectName}-img-classification`
     });
 
     const semanticSegmentationModelPackageGroup = new sagemaker.CfnModelPackageGroup(this, 'SemanticSegmentationModelPackageGroup', {
-      modelPackageGroupName: `${projectNameParam.valueAsString}-semantic-segmentation`
+      modelPackageGroupName: `${props.projectName}-semantic-segmentation`
     });
 
     // Set up the respective deployment workflows for both of those models

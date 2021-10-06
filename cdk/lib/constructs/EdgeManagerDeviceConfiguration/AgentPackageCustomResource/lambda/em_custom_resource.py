@@ -223,7 +223,7 @@ def prepare_device_package(event, context):
     # create a new thing group
     thing_group_arn = None
     agent_pkg_bucket = 'sagemaker-edge-release-store-us-west-2-linux-x64'
-    agent_config_package_prefix = f'edge-device-configuration/agent/{iot_thing_name}/config.tgz'
+    agent_config_package_prefix = f'edge-device-configuration/{iot_thing_name}/agent/config.tgz'
 
     # check if edge agent package has already been built
     # TODO: Fix bad coding practices here
