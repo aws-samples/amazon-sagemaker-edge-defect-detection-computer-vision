@@ -6,9 +6,9 @@ In this project, we show how you can use the AWS CDK to define the infrastructur
 
 1. Install the AWS CDK following the [official guide](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) in the AWS documentation.
 2. Install the dependencies by running `npm install`.
-3. Deploy the CDK application by running `cdk deploy --parameters ProjectName=<YOUR PROJECT NAME>`. Choose a project name to assign to this project. You may choose any name, which is compliant with S3 bucket names, e.g. `sm-edge-project`.
+3. Deploy the CDK application by running `cdk deploy --context projectName=<YOUR PROJECT NAME>`. Choose a project name to assign to this project. You may choose any name, which is compliant with S3 bucket names, e.g. `sm-edge-project`.
 
-## CDK Constructs
+## Custom CDK Constructs used
 
 ### EdgeManagerDeviceConfiguration
 

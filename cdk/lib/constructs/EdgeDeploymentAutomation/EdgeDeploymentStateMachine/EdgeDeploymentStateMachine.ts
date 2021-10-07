@@ -56,7 +56,7 @@ export class EdgeDeploymentStateMachine extends cdk.Construct {
       'IOT_JOB_TARGET_ARN': props.iotJobTargetArn,
       'S3_BUCKET_NAME': props.s3Bucket.bucketName,
       'S3_MODEL_ARTIFACT_PREFIX': props.s3ModelArtifactPrefix,
-      'COMPILATION_JOB_INPUT_DATA_SIZE': props.neoCompilationSettings.dataSize,
+      'COMPILATION_JOB_DATA_INPUT_CONFIG': props.neoCompilationSettings.dataInputConfig,
       'COMPILATION_FRAMEWORK': props.neoCompilationSettings.framework,
       'COMPILATION_TARGET_PLATFORM': JSON.stringify(props.neoCompilationSettings.targetPlatform),
       'SAGEMAKER_EXECUTION_ROLE_ARN': props.sagemakerExecutionRole.roleArn

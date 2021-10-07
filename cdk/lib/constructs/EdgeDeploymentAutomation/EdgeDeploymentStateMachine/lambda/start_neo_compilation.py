@@ -10,7 +10,7 @@ s3_bucket_name = os.environ['S3_BUCKET_NAME']
 s3_model_artifact_prefix = os.environ['S3_MODEL_ARTIFACT_PREFIX']
 model_name = os.environ['MODEL_NAME']
 
-compilation_job_input_data_size = os.environ['COMPILATION_JOB_INPUT_DATA_SIZE']
+compilation_job_data_input_config = os.environ['COMPILATION_JOB_DATA_INPUT_CONFIG']
 compilation_job_framework = os.environ['COMPILATION_FRAMEWORK']
 compilation_job_target_platform = json.loads(os.environ['COMPILATION_TARGET_PLATFORM'])
 
@@ -27,7 +27,7 @@ def handler(event, context):
         RoleArn=sagemaker_execution_role_arn,
         InputConfig={
             'S3Uri': s3_model_artifact_location,
-            'DataInputConfig': '{"data": [' + compilation_job_input_data_size + ']}',
+            'DataInputConfig': compilation_job_data_input_config,
             'Framework': compilation_job_framework
         },
         OutputConfig={

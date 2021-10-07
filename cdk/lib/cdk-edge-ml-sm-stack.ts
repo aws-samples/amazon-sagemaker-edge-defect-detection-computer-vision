@@ -46,7 +46,7 @@ export class CdkEdgeMlSmStack extends cdk.Stack {
 
     // Define the IoT Things and the Edge Manager Configurations for these IoT Things
     const iotThingName01 = `${props.projectName}-edge-device-01`;
-    const iotThingGroupName = 'cdk-edge-group'
+    const iotThingGroupName = `${props.projectName}-thing-group`;
 
     const edgeManagerDeviceConfig01 = new EdgeManagerDeviceConfiguration(this, 'EdgeManagerDeviceConfig01', {
       assetsBucket: s3AssetsBucket,
@@ -90,7 +90,7 @@ export class CdkEdgeMlSmStack extends cdk.Stack {
       modelName: 'img-classification',
       modelPackageGroupName: imgClassificationModelPackageGroup.modelPackageGroupName,
       neoCompilationSettings: {
-        dataSize: '1,3,224,224',
+        dataInputConfig: '{"data": [1,3,224,224]',
         framework: 'MXNET',
         targetPlatform: {
           'Os': 'LINUX',
@@ -107,7 +107,7 @@ export class CdkEdgeMlSmStack extends cdk.Stack {
       modelName: 'semantic-segmentation',
       modelPackageGroupName: semanticSegmentationModelPackageGroup.modelPackageGroupName,
       neoCompilationSettings: {
-        dataSize: '1,3,224,224',
+        dataInputConfig: '{"input_image":[1,3,224,224]}',
         framework: 'KERAS',
         targetPlatform: {
           'Os': 'LINUX',
