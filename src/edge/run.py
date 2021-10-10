@@ -243,7 +243,7 @@ def homepage():
     if y_segm is not None:
         segm_img_encoded = app.create_b64_img_from_mask(y_segm)
         segm_img_decoded_utf8 = segm_img_encoded.decode('utf-8')
-        logging.info('Model latency: t_clf=%fms, t_segm=%fms' % (t_ms_clf, t_ms_segm))
+        logging.info('Model latency: t_segm=%fms' %  t_ms_segm)
     else:
         segm_img_encoded = None
         segm_img_decoded_utf8 = None

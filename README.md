@@ -81,7 +81,7 @@ src/cloud
 
 ## Walkthrough
 
-Please follow the steps below to start building your own edge ML project. Please note that model training in the cloud and running inference on the edge are interdependent of each other. We recommend you start by setting up the edge device first and then train the models as a second step. This way, you can then directly deploy them to the edge after you have successfully trained the models.
+Please follow the steps below to start building your own edge ML project. You will create a CloudFormation stack to set up all necessary resources in the cloud and prepare an edge device for usage with SageMaker Edge Manager. You will then train models in the cloud and deployment to the edge device using AWS IoT. Please note that model training in the cloud and running inference on the edge are interdependent of each other. We recommend you start by setting up the edge device first and then train the models as a second step. This way, you can then directly deploy them to the edge after you have successfully trained the models.
 
 ### Setting up workshop resources by launching the CloudFormation stack
 
@@ -99,7 +99,7 @@ This stack configures several resources needed for this workshop. It sets up an 
 
 1. Launch an EC2 instance with Ubuntu Server 20 with SSH access (e.g. via [Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)) into a public subnet and make sure it gets assigned a public IP (you will need this later to access the web application). Ensure that it has access to the S3 buckets containing your configuration package (find the bucket name in the CloudFormation output). It will also need access to the bucket containing the SageMaker Edge Agent binary. For more information, refer to the [SageMaker Edge Manager documentation pages](https://docs.aws.amazon.com/sagemaker/latest/dg/edge-device-fleet-about.html). This EC2 instance will from now be considered our "edge device".
 2. Clone this GitHub repository onto the edge device or simply copy the `src/edge` directory onto the edge device.
-3. Install the dependencies by running `sudo apt update -y && sudo apt install -y build-essential procps` and `pip install -U numpy sysv_ipc boto3 grpcio-tools grpcio protobuf sagemaker paho-mqtt waitress`.
+3. Install the dependencies by running `sudo apt update -y && sudo apt install -y build-essential procps` and `pip install -r requirements.txt` to install the necessary python dependencies.
 4. Run the installation script by running `python3 install.py --project-name <YOUR PROJECT NAME> --account-id <YOUR ACCOUNT ID>`. This script will download the edge agent configuration package created during the CloudFormation deployment, download the edge agent binary and also generate the protobuf agent stubs. A newly created directory `./agent/` contains the files for the edge agent. The following image illustrated what happens in the installation script:
 
 ![edge config](img/edge_config.png)
@@ -108,7 +108,7 @@ This stack configures several resources needed for this workshop. It sets up an 
 6. Start the edge agent by running `./start_edge_agent.sh`, which launches the edge agent on the unix socket `tmp/edge_agent`. You should now the able to interact with the edge agent from your application.
 7. Before running the actual application, you need to define an environment variable which determines whether you want to run the app with the Flask development server or the with a production-ready uWSGI server (using [waitress](https://github.com/Pylons/waitress)). For now, lets use the production server by setting `export SM_APP_ENV=prod`. For debugging, you might want to later change this to `dev`.
 8. Run the application with `python3 run.py` to initialize the application, verify cloud connectivity, connect to the edge agent. This application is a [Flask](https://flask.palletsprojects.com/en/2.0.x/) web application running port port 8080 which is integrated with SageMaker Edge Agent and AWS IoT for OTA updates. You will see that, if you have no models deployed yet and have not downloaded any test images, nothing will happen yet in the application. It will stay idle until it can access test images in the `/static` folder and run inference on those with a deployed model. In the next step, we will see how we can run automated model training with SageMaker Pipelines and deploy them onto the edge device for local inference.
-9.  Go to the EC2 dashboard and browse the public IP address on port 8080, i.e. `http://<PUBLIC_IP>:8080`. You should now see the application in your browser window. *(Toubleshoot: ensure that you allow ingress on port 8080 in your instance's security group. Also, make sure your local firewalls on your device allow ingress through port 8080)*
+9.  Go to the EC2 dashboard and find the public IP address of your instance. Browse the public IP address on port 8080, i.e. `http://<PUBLIC_IP>:8080`. You should now see the web application in your browser window. Ensure that you allow ingress on port 8080 in the security group attached to your instance (see [here](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/working-with-security-groups.html#adding-security-group-rule) for details on how to set this up). Also, make sure your local firewalls on your device allow ingress through port 8080. Refer to the [Troubleshooting](#troubleshooting-and-faq) section for further tips.
 
 ### Automated model training in the cloud with SageMaker Pipelines
 
@@ -126,7 +126,7 @@ This stack configures several resources needed for this workshop. It sets up an 
 
 1. Once the pipeline finished successfully, your model is almost ready for use on the edge device. Verify that the latest model version in the model registry is approved to make it available for edge deployment.
 2. Execute the following cells of the notebook to run model compilation with SageMaker Neo and then package the model for usage with SageMaker Edge Manager. 
-3. Finally, you can deploy the model package onto the edge by running the IoT Job as an Over-The-Air update. If your edge application is currently running, it should receive the OTA deployment job, download the model package and load it into the Edge Agent. 
+3. Finally, you can deploy the model package onto the edge by running the IoT Job as an Over-The-Air update. If your edge application is currently running, it should receive the OTA deployment job, download the model package and load it into the Edge Agent.
 4. Verify that the deployment automation works by checking the log output on the edge device. You can also verify the successful deployment of a new model version by verifying the successful execution of the IoT job in the AWS IoT Core Console (under "Manage" --> "Jobs") as shown below.
 
 ![pipeline](img/iot_job.png)

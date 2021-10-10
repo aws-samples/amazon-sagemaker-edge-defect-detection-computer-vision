@@ -191,7 +191,10 @@ Resources:
         ZipFile: |
           # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
           # SPDX-License-Identifier: MIT-0
-          """Lambda-backed custom resource function to create the SageMaker Edge Manager device package"""
+          """
+          Lambda-backed custom resource function to create the SageMaker Edge Manager device package.
+          Support SageMaker Edge Agent Version: 
+          """
           import json
           import os
           import logging
@@ -387,23 +390,29 @@ Resources:
               iot_client.attach_policy(policyName=iot_policy_name, target=cert_arn)
               iot_client.attach_thing_principal(thingName=iot_thing_name, principal=cert_arn)        
               
-              LOGGER.info("Finally, let's create the agent config file")
+              LOGGER.info("Creating agent config JSON file")
+
+              # Please note that the $WORKDIR variables need to be replaced by the absolute path of the working directory of your project.
+              # If you follow the guide, the install script will automatically replace those.
               agent_params = {
                   "sagemaker_edge_core_device_name": sm_edge_device_name,
                   "sagemaker_edge_core_device_fleet_name": sm_em_fleet_name,
+                  "sagemaker_edge_core_region": AWS_REGION,
+                  "sagemaker_edge_provider_provider": "Aws",
+                  "sagemaker_edge_provider_provider_path" : "$WORKDIR/agent/lib/libprovider_aws.so",
+                  "sagemaker_edge_core_root_certs_path": "$WORKDIR/agent/certificates/root",
+                  "sagemaker_edge_provider_aws_ca_cert_file": "$WORKDIR/agent/certificates/iot/AmazonRootCA1.pem",
+                  "sagemaker_edge_provider_aws_cert_file": "$WORKDIR/%s" % cert_relative,
+                  "sagemaker_edge_provider_aws_cert_pk_file": "$WORKDIR/%s" % key_relative,
+                  "sagemaker_edge_provider_aws_iot_cred_endpoint": "https://%s/role-aliases/%s/credentials" % (cred_host,role_alias),
+                  "sagemaker_edge_core_capture_data_destination": "Cloud",
+                  "sagemaker_edge_provider_s3_bucket_name": BUCKET_NAME,
+                  "sagemaker_edge_core_folder_prefix": "edge-agent-inference-data-capture",
                   "sagemaker_edge_core_capture_data_buffer_size": 30,
                   "sagemaker_edge_core_capture_data_batch_size": 10,
-                  "sagemaker_edge_core_capture_data_push_period_seconds": 4,
-                  "sagemaker_edge_core_folder_prefix": "edge-agent-inference-data-capture",
-                  "sagemaker_edge_core_region": AWS_REGION,
-                  "sagemaker_edge_core_root_certs_path": "./agent/certificates/root",
-                  "sagemaker_edge_provider_aws_ca_cert_file":"./agent/certificates/iot/AmazonRootCA1.pem",
-                  "sagemaker_edge_provider_aws_cert_file":"./%s" % cert_relative,
-                  "sagemaker_edge_provider_aws_cert_pk_file":"./%s" % key_relative,
-                  "sagemaker_edge_provider_aws_iot_cred_endpoint": "https://%s/role-aliases/%s/credentials" % (cred_host,role_alias),
-                  "sagemaker_edge_provider_provider": "Aws",
-                  "sagemaker_edge_provider_s3_bucket_name": BUCKET_NAME,
-                  "sagemaker_edge_core_capture_data_destination": "Cloud"
+                  "sagemaker_edge_core_capture_data_push_period_seconds": 10,
+                  "sagemaker_edge_core_capture_data_base64_embed_limit": 2,
+                  "sagemaker_edge_log_verbose": False
               }
               with open(LOCAL_DIR_PREFIX + 'agent/conf/config_edge_device.json', 'w') as conf:
                   conf.write(json.dumps(agent_params, indent=4))
