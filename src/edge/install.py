@@ -7,6 +7,7 @@ import stat
 import io
 import logging
 import argparse
+import pathlib
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -14,13 +15,27 @@ logging.basicConfig(level=logging.INFO)
 s3_client = boto3.client('s3')
 
 # Default bucket for downloading the SM Edge Agent. Please note that your device needs access to this bucket through IAM
-agent_version = '1.20210512.96da6cc'
+agent_version = '1.20210820.e20fa3a'
 agent_pkg_bucket = 'sagemaker-edge-release-store-us-west-2-linux-x64'
+
+def replace_pathnames_in_config(configfile):
+    """Replaces the pathnames in the agent config to use absolute paths"""
+    # Read in the file
+    with open(configfile, 'r') as file :
+      filedata = file.read()
+
+    # Replace the target string
+    basepath = str(pathlib.Path().resolve())
+    filedata = filedata.replace('$WORKDIR', basepath)
+
+    # Write the file out again
+    with open(configfile, 'w') as file:
+        file.write(filedata)
 
 def download_config(bucket_name, agent_config_package_prefix):
     # Check if agent is installed and configured already
     if not os.path.isdir('agent'):
-        logger.info('No SM Edge Agent directory found. Proceding with download of configuration package...')
+        logger.info('No SM Edge Agent directory found. Proceeding with download of configuration package...')
 
         # Get the configuration package with certificates and config files
         with io.BytesIO() as file:
@@ -30,11 +45,15 @@ def download_config(bucket_name, agent_config_package_prefix):
             tar = tarfile.open(fileobj=file)
             tar.extractall('.')
             tar.close()
+        
+        # Replace the variables in the config file to make paths absolute
+        logger.info('Replacing path names in Edge Agent configuration file...')
+        replace_pathnames_in_config('./agent/conf/config_edge_device.json')
 
         # Download and install SageMaker Edge Manager
         agent_pkg_key = 'Releases/%s/%s.tgz' % (agent_version, agent_version)
         # get the agent package
-        logger.info('Downloading and installing edge agent binary...')
+        logger.info('Downloading and installing SageMaker Edge Agent binaries version \"%s\"...' % agent_version)
 
         with io.BytesIO() as file:
             s3_client.download_fileobj(agent_pkg_bucket, agent_pkg_key, file)
