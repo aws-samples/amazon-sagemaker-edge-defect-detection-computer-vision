@@ -1,5 +1,7 @@
 # Defect detection using computer vision at the edge with Amazon SageMaker
 
+This repository is related to our blog post [Detect industrial defects at low latency with computer vision at the edge with Amazon SageMaker Edge](https://aws.amazon.com/blogs/machine-learning/detect-industrial-defects-at-low-latency-with-computer-vision-at-the-edge-with-amazon-sagemaker-edge/) in the AWS Machine Learning blog.
+
 In this workshop, we will walk you through a step by step process to build and train computer vision models with Amazon SageMaker and package and deploy them to the edge with [SageMaker Edge Manager](https://aws.amazon.com/sagemaker/edge-manager/). The workshop focuses on a defect detection use case in an industrial setting with models like image classification, and semantic segmentation to detect defects across several object types. We will complete the MLOps lifecycle with continuous versioned over-the-air model updates and data capture to the cloud.
 
 ## Architecture
