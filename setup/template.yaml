@@ -13,6 +13,12 @@ Resources:
     DeletionPolicy: Delete
     Properties:
       BucketName: !Sub sm-edge-workshop-${ProjectName}-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
 
   EdgeDeviceRole:
     Type: AWS::IAM::Role
