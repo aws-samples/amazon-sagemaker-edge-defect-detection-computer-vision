@@ -50,13 +50,14 @@ iot_params = json.loads(open(SM_EDGE_CONFIGFILE_PATH, 'r').read())
 # Retrieve the IoT thing name associated with the edge device
 iot_client = app.get_client('iot', iot_params)
 sm_client = app.get_client('sagemaker', iot_params)
+
 resp = sm_client.describe_device(
     DeviceName=iot_params['sagemaker_edge_core_device_name'],
     DeviceFleetName=iot_params['sagemaker_edge_core_device_fleet_name']
 )
 device_name = resp['IotThingName']
-mqtt_host=iot_client.describe_endpoint(endpointType='iot:Data-ATS')['endpointAddress']
-mqtt_port=8883
+mqtt_host = iot_client.describe_endpoint(endpointType='iot:Data-ATS')['endpointAddress']
+mqtt_port = 8883
 
 # Send logs to cloud via MQTT topics
 logger = app.Logger(device_name, iot_params)
@@ -89,7 +90,7 @@ def get_square_image(img):
         return img
     elif width > height:
         result = PIL.Image.new(img.mode, (width, width), padding_color)
-        result.paste(pil_img, (0, (width - height) // 2))
+        result.paste(img, (0, (width - height) // 2))
         return result
     else:
         result = PIL.Image.new(img.mode, (height, height), padding_color)
@@ -235,7 +236,7 @@ def homepage():
     inference_img_path = random.choice(list_img_inf)
     inference_img_filename = re.search(r'(?<=\/static\/).+$', inference_img_path)[0]
 
-    # Run inferece on this image
+    # Run inference on this image
     y_clf, t_ms_clf = run_classification_inference(edge_agent, inference_img_path)
     y_segm, t_ms_segm = run_segmentation_inference(edge_agent, inference_img_path)
 
