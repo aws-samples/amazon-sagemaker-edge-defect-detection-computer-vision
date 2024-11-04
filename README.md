@@ -4,6 +4,9 @@ This repository is related to our blog post [Detect industrial defects at low la
 
 In this workshop, we will walk you through a step by step process to build and train computer vision models with Amazon SageMaker and package and deploy them to the edge with [SageMaker Edge Manager](https://aws.amazon.com/sagemaker/edge-manager/). The workshop focuses on a defect detection use case in an industrial setting with models like image classification, and semantic segmentation to detect defects across several object types. We will complete the MLOps lifecycle with continuous versioned over-the-air model updates and data capture to the cloud.
 
+> [!WARNING]
+> Please note that this sample is outdated. Since 26th of April 2024, SageMaker Edge Manager has been discontinued. Please refer to the respective [EOL documentation page](https://docs.aws.amazon.com/sagemaker/latest/dg/edge-eol.html) in order to learn about potential alternatives. 
+
 ## Architecture
 
 The architecture we will build during this workshop is illustrated below. Several key components can be highlighted:
