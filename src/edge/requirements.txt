@@ -4,7 +4,7 @@ sysv-ipc==1.1.0
 boto3==1.17.89
 grpcio-tools==1.38.0
 grpcio==1.53.2
-protobuf==3.18.3
+protobuf==5.29.6
 paho-mqtt==1.5.1
 waitress==3.0.1
 Flask==3.1.3
